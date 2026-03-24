@@ -18,10 +18,10 @@ from telethon.tl.functions.messages import StartBotRequest
 
 
 class DahlStatus(IntEnum):
-    NOT_FOUND = 0      # not using dahl
-    OFFLINE =   1      # no devices
-    ONLINE =    2      # user exist
-    ERROR =     -1     # req err
+    NOT_FOUND =  0     # not using dahl
+    OFFLINE   =  1     # no devices
+    ONLINE    =  2     # user exist
+    ERROR     = -1     # req err
 
 
 @dataclass
