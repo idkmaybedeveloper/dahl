@@ -1,4 +1,5 @@
 # https://nx.kroot.sh/lain/dahl_chair -> ???
+# TODO: public release possibly??
 import asyncio
 import hashlib
 import json
