@@ -19,9 +19,9 @@ from telethon.tl.functions.messages import StartBotRequest
 
 class DahlStatus(IntEnum):
     NOT_FOUND = 0      # not using dahl
-    OFFLINE = 1        # no devices
-    ONLINE = 2         # user exist
-    ERROR = -1         # req err
+    OFFLINE =   1      # no devices
+    ONLINE =    2      # user exist
+    ERROR =     -1     # req err
 
 
 @dataclass
@@ -33,9 +33,9 @@ class LookupResult:
     def __str__(self) -> str:
         status_map = {
             DahlStatus.NOT_FOUND: "not in dahl",
-            DahlStatus.OFFLINE: "in dahl (offline)",
-            DahlStatus.ONLINE: "in dahl (online)",
-            DahlStatus.ERROR: f"error: {self.error}",
+            DahlStatus.OFFLINE:   "in dahl (offline)",
+            DahlStatus.ONLINE:    "in dahl (online)",
+            DahlStatus.ERROR:    f"error: {self.error}",
         }
         return f"[{self.user_id}] {status_map[self.status]}"
 
@@ -44,9 +44,9 @@ class DahlLookup:
     API_BASE = "https://api.telega.info/v1/"
     AUTH_BOT = "dahl_auth_bot"
     HEADERS = {
-        "User-Agent": "DAHL-Mobile-App",
-        "X-Platform": "Android",
-        "X-Version": "2.4.0",
+               "User-Agent": "DAHL-Mobile-App",
+               "X-Platform": "Android",
+               "X-Version": "2.4.0",
     }
 
     def __init__(self, api_id: int, api_hash: str, session_name: str = "dahl_session"):
