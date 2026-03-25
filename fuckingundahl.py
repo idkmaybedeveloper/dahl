@@ -53,6 +53,7 @@ class DahlLookup:
         self.api_hash = api_hash
         self.session_name = session_name
         self.tokens_file = Path("dahl_tokens.json")
+        self.debug = os.getenv("DEBUG") == "1"
 
         self.tg: TelegramClient | None = None
         self.http: httpx.AsyncClient | None = None
@@ -73,6 +74,26 @@ class DahlLookup:
     def _save_tokens(self, tokens: dict) -> None:
         self.tokens_file.write_text(json.dumps(tokens, indent=2))
 
+    def _debug_log(self, message: str) -> None:
+        if self.debug:
+            print(f"[debug] {message}")
+
+    def _debug_response(self, label: str, response: httpx.Response) -> None:
+        if not self.debug:
+            return
+
+        content_type = response.headers.get("content-type", "")
+        if content_type.startswith("application/json"):
+            try:
+                body = json.dumps(response.json())
+            except Exception:
+                body = response.text
+        else:
+            body = response.text
+
+        self._debug_log(f"{label}: {response.request.method} {response.request.url} -> {response.status_code}")
+        self._debug_log(f"{label} body: {body}")
+
     async def connect(self) -> None:
         self.tg = TelegramClient(self.session_name, self.api_id, self.api_hash)
         self.http = httpx.AsyncClient(headers=self.HEADERS, timeout=15.0)
@@ -92,6 +113,7 @@ class DahlLookup:
                 f"{self.API_BASE}auth/token",
                 json={"token": refresh}
             )
+            self._debug_response("auth/refresh", r)
             if r.status_code == 200:
                 data = r.json()
                 self.http.headers["Authorization"] = f"Bearer {data['access_token']}"
@@ -125,6 +147,7 @@ class DahlLookup:
             f"{self.API_BASE}auth",
             json={"auth_key_id": key_id, "user_id": self.me.id}
         )
+        self._debug_response("auth", r)
         print(f"[*] auth response: {r.status_code}")
 
         if r.status_code == 200:
@@ -156,6 +179,7 @@ class DahlLookup:
             "dc_version": 5,
         }
         r = await self.http.post(f"{self.API_BASE}api/account", json=body)
+        self._debug_response("account/register", r)
         print(f"[*] register account: {r.status_code}")
 
     async def lookup(self, user_id: int, _retried: bool = False) -> LookupResult:
@@ -171,6 +195,7 @@ class DahlLookup:
             params={"type": "p2p"},
             json=body
         )
+        self._debug_response("calls/create", r)
 
         # handle 401 - reauth and retry once
         if r.status_code == 401 and not _retried:
@@ -197,6 +222,7 @@ class DahlLookup:
                         f"{self.API_BASE}api/calls/end",
                         json={"call_id": m.group(0)}
                     )
+                    self._debug_log("calls/end: ended active call")
                     await asyncio.sleep(0.5)
                 return await self.lookup(user_id)  # retry
 
@@ -213,10 +239,11 @@ class DahlLookup:
 
         # cleanup: end call if created
         if call_id:
-            await self.http.post(
+            r_end = await self.http.post(
                 f"{self.API_BASE}api/calls/end",
                 json={"call_id": call_id}
             )
+            self._debug_response("calls/end", r_end)
 
         return result
 
